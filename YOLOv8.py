@@ -3,7 +3,7 @@ import cv2
 from ultralytics import YOLO
 import random
 
-def process_predictions(img, Detect_obj, Box_colours, class_list):
+def predictions(img, Detect_obj, Box_colours, class_list):
     DP = Detect_obj[0].numpy()
 
     if len(DP) != 0:
@@ -46,7 +46,7 @@ for i in range(len(class_list)):
     B = random.randint(0, 255)
     Box_colours.append((B, G, R))
 
-model = YOLO(r"YOLO KAGGLE RESULTS/weights/best.pt", "v8")
+model = YOLO(r"3339model\weights\best.pt", "v8")
 
 
 caps = [cv2.VideoCapture(i) for i in range(2)]  
@@ -71,8 +71,8 @@ while True:
         break
 
     for i, img in enumerate(imgs):
-        Detect_obj = model.track(source=[img], conf=0.50, save=True)
-        process_predictions(img, Detect_obj, Box_colours, class_list)
+        Detect_obj = model.track(source=[img], conf=0.50, save=False)
+        predictions(img, Detect_obj, Box_colours, class_list)
         cv2.imshow(f'CAM-{i}', img)
         
     if cv2.waitKey(1) == ord('q'):
