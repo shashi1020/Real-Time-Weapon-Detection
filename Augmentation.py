@@ -3,6 +3,26 @@ import cv2
 from ultralytics import YOLO
 import random
 
+def augment_image(image):
+    # Randomly choose augmentation parameters
+    flip = np.random.choice([True, False])
+    angle = np.random.randint(-10, 10)  # Rotation angle in degrees
+    brightness = np.random.uniform(0.5, 1.5)  # Brightness factor
+
+    # Flip the image horizontally
+    if flip:
+        image = cv2.flip(image, 1)
+
+    # Rotate the image
+    height, width = image.shape[:2]
+    rotation_matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+    image = cv2.warpAffine(image, rotation_matrix, (width, height), flags=cv2.INTER_LINEAR)
+
+    # Adjust brightness
+    image = cv2.convertScaleAbs(image, alpha=brightness, beta=0)
+
+    return image
+
 def predictions(img, Detect_obj, Box_colours, class_list):
     DP = Detect_obj[0].numpy()
 
@@ -48,8 +68,7 @@ for i in range(len(class_list)):
 
 model = YOLO(r"3339model\weights\best.pt", "v8")
 
-
-caps = [cv2.VideoCapture(i) for i in range(2)]  
+caps = [cv2.VideoCapture(i) for i in range(2)]
 
 for cap in caps:
     cap.set(3, 640)
@@ -63,7 +82,6 @@ else:
     print("Starting your webcams...")
 
 while True:
-    
     imgs = [cap.read()[1] for cap in caps]
 
     if any(img is None for img in imgs):
@@ -71,8 +89,15 @@ while True:
         break
 
     for i, img in enumerate(imgs):
-        Detect_obj = model.track(source=[img], conf=0.50, save=False)
+        # Apply augmentation
+        augmented_img = augment_image(img)
+
+        # Perform object detection on the augmented image
+        Detect_obj = model.track(source=[augmented_img], conf=0.65, save=False)
+        
+        # Display predictions on the original image
         predictions(img, Detect_obj, Box_colours, class_list)
+        
         cv2.imshow(f'CAM-{i}', img)
         
     if cv2.waitKey(1) == ord('q'):
